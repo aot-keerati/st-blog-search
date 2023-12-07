@@ -1,24 +1,51 @@
+import ast
+import cohere
 import openai
 import pinecone
 import streamlit as st
 
-# OpenAI API key
-openai.api_key = "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"  ### TN Aot Key | private using ### #ntkkey
+# OPENAI_API_KEY
+# PINECONE_API_KEY
+# PINECONE_ENV
+# COHERE_API_KEY
 
-# get the Pinecone API key and environment
-pinecone.init(api_key="0a310604-6e64-4616-b258-a049bec92e82", ### TN Aot Key | private using ###
-                    environment="gcp-starter")
+openai.api_key = OPENAI_API_KEY
+pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENV)
+co = cohere.Client(COHERE_API_KEY)
+INDEX_NAME = 'blog-index'
+index = pinecone.Index(index_name=INDEX_NAME)
 
-index_name = "blog-index"
-index = pinecone.Index(index_name = index_name)
+# if INDEX_NAME not in pinecone.list_indexes():
+#     # Index does not exist. Creating new index.
+#     pinecone.create_index(INDEX_NAME, 768, metadata_config= {"indexed": ["url", "id"]})
+# else:
+#     # Index already exists. Deleting and Creating new index.
+#     pinecone.delete_index(INDEX_NAME)
+#     pinecone.create_index(INDEX_NAME, 768, metadata_config= {"indexed": ["url", "id"]})
 
-def related_articles(query, k):
-    # index = pinecone.Index(index_name = index_name)
+f = open('dat/vectors-data.txt', 'r')
+blog_vectors_import = f.read()
+blog_vectors = ast.literal_eval(blog_vectors_import)
+f.close()
 
-    query_vector = openai.embeddings.create(
-                    input = query,
-                    model = "text-embedding-ada-002"
-                ).data[0].embedding
+f = open('dat/keep-vectors-data.txt', 'r')
+keep_vectors_import = f.read()
+keep_vectors = ast.literal_eval(keep_vectors_import)
+f.close()
+
+f = open('dat/prompt.txt', 'r')
+PROMPT = f.read()
+f.close()
+
+def articles_search(query, k):
+    vector_found = [i for i in keep_vectors if i.get('query') == query]
+    if len(vector_found) == 1: # case vector exist
+        query_vector = vector_found[0]['values']
+    else : # case vector doesn't exist
+        query_vector = co.embed(texts = [query],
+                                model='embed-multilingual-v2.0',
+                                input_type='search_query').embeddings
+        keep_vectors.append({'query': query, 'values': query_vector})
 
     search_response = index.query(
         top_k = k,
@@ -28,26 +55,10 @@ def related_articles(query, k):
 
     return search_response['matches']
 
-prompt = """You're speaking with a user who needs an answer or description in question form.
-Your goal is to provide helpful information based on your knowledge from the 'related articles', giving a confident and informative answer.
-
-If you don't have the necessary information, let them know.
-If you don't know the answer, just say that you don't know, don't try to make up an answer.
-
-These are relevant excerpts from the retrieved articles
-(some may not be directly related to the query.
-Please consider the most relevant information for your response.): {related_articles}
-
-Please provide your response to the following question in the same language as the context:
-    query: {user_query}
-"""
-
 def qa(query, articles):
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
-        messages=[
-            { "role": "system", "content": "You are a polite assistant" },
-            { "role": "user", "content": prompt.format(
+        messages=[{ "role": "user", "content": PROMPT.format(
                 related_articles = articles,
                 user_query = query) }
         ],
@@ -57,16 +68,22 @@ def qa(query, articles):
 
 ### Front
 
-st.write("Blog search")
+st.set_page_config(page_title="Blog search")
+st.write("## Blog search")
 
-query = st.text_input("search...")
+st.caption("เว็บแอปพลิเคชั่นระบบสืบค้นข้อมูลที่ทำการค้นหาข้อมูลด้วย vectorstrore และสร้างคำตอบด้วย OpenAI")
 
-if st.button('Search'):
-    articles = related_articles(query, k=4)
+with st.form('form_1'):
+  query = st.text_area('พิมพ์คำถามหรือคีย์เวิร์ดที่ต้องการค้นหา:', placeholder='เช่น ปลิงทะเลชมพู, พลังงานชีวภาพ คืออะไร')
+  search_btn = st.form_submit_button('Submit')
+  if search_btn:
+    articles = articles_search(query, k=4)
     res = qa(query, articles)
-    st.write(res.choices[0].message.content)
-    st.write(res)
-    st.write(articles)
 
-e = RuntimeError('This is an exception of type RuntimeError')
-st.exception(e)
+    st.write('### Answer:')
+    st.write(res.choices[0].message.content)
+    st.write('\n\n')
+    st.caption(res.usage)
+    st.write(articles_search(query, k=4))
+
+
