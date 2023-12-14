@@ -26,11 +26,6 @@ blog_vectors_import = f.read()
 blog_vectors = ast.literal_eval(blog_vectors_import)
 f.close()
 
-f = open('dat/keep-vectors-data.txt', 'r')
-keep_vectors_import = f.read()
-keep_vectors = ast.literal_eval(keep_vectors_import)
-f.close()
-
 f = open('dat/prompt.txt', 'r')
 PROMPT = f.read()
 f.close()
