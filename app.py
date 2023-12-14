@@ -4,10 +4,10 @@ import openai
 import pinecone
 import streamlit as st
 
-# OPENAI_API_KEY
-# PINECONE_API_KEY
-# PINECONE_ENV
-# COHERE_API_KEY
+OPENAI_API_KEY = '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'
+PINECONE_API_KEY = '0a310604-6e64-4616-b258-a049bec92e82'
+PINECONE_ENV = 'gcp-starter'
+COHERE_API_KEY = 'kpZfBhHE4FSzvdZeSE2SK50oblBd7kHYVLqZlGeJ'
 
 openai.api_key = OPENAI_API_KEY
 pinecone.init(api_key=PINECONE_API_KEY, environment=PINECONE_ENV)
@@ -66,12 +66,13 @@ def qa(query, articles):
     )
     return response
 
-### Front
+def create_hyperlink(url, text):
+    return f'<a href="{url}" target="_blank">{text}</a>'
 
+### Front
 st.set_page_config(page_title="Blog search")
 st.write("## Blog search")
-
-st.caption("เว็บแอปพลิเคชั่นระบบสืบค้นข้อมูลที่ทำการค้นหาข้อมูลด้วย vectorstrore และสร้างคำตอบด้วย OpenAI")
+st.caption("เว็บแอปพลิเคชั่นระบบสืบค้นข้อมูล ที่ค้นหาข้อมูลด้วย vectorized search และสร้างคำตอบด้วย GPT-3.5 model")
 
 with st.form('form_1'):
   query = st.text_area('พิมพ์คำถามหรือคีย์เวิร์ดที่ต้องการค้นหา:', placeholder='เช่น ปลิงทะเลชมพู, พลังงานชีวภาพ คืออะไร')
@@ -82,8 +83,8 @@ with st.form('form_1'):
 
     st.write('### Answer:')
     st.write(res.choices[0].message.content)
-    st.write('\n\n')
+    st.write('บทความที่เกี่ยวข้องมากที่สุด ได้แก่:')
+    st.markdown(create_hyperlink(articles[0]['metadata']['url'], articles[0]['metadata']['title']), unsafe_allow_html=True)
+
     st.caption(res.usage)
-    st.write(articles_search(query, k=4))
-
-
+    st.write(articles)
