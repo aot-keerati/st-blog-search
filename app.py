@@ -1,4 +1,3 @@
-%%writefile app.py
 import ast
 import cohere
 import openai
