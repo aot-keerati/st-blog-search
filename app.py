@@ -4,7 +4,7 @@ import openai
 import pinecone
 import streamlit as st
 
-OPENAI_API_KEY = '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'
+
 PINECONE_API_KEY = '0a310604-6e64-4616-b258-a049bec92e82'
 PINECONE_ENV = 'gcp-starter'
 COHERE_API_KEY = 'kpZfBhHE4FSzvdZeSE2SK50oblBd7kHYVLqZlGeJ'
