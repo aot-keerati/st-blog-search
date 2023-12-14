@@ -72,7 +72,7 @@ OPENAI_API_KEY = st.sidebar.text_input("กรอก OpenAI API Key:", type="pas
 with st.form('form_1'):
   query = st.text_area('พิมพ์คำถามหรือคีย์เวิร์ดที่ต้องการค้นหา:', placeholder='เช่น ปลิงทะเลชมพู, พลังงานชีวภาพ คืออะไร')
   search_btn = st.form_submit_button('Submit')
-  if search_btn, query:
+  if search_btn and query:
       if not OPENAI_API_KEY:
         st.info("Please add your OpenAI API key to continue.")
       else:
